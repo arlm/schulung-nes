@@ -2,6 +2,7 @@
 
 .import _main
 .export __STARTUP__:absolute=1
+.exportzp _FrameCount
 
 ; linker-generated symbols
 
@@ -20,7 +21,7 @@ APU_FRAME_CTR = $4017
 
 .segment "ZEROPAGE"
 
-; no variables
+_FrameCount: .res 1
 
 .segment "HEADER"
 
@@ -70,7 +71,9 @@ start:
     bpl @vblank_wait_1
 
     ; We now have about 30,000 cycles to burn before the PPU stabilizes.
-
+    ; One thing we can do with this time is put RAM in a known state.
+    ; Here we fill it with $00, which matches what a C compiler expects
+    ; for BSS. Conveniently, X is still 0.
     stx APU_STATUS ; disable music channels
 
     ; We'll fill RAM with $00.
@@ -124,8 +127,13 @@ start:
 
     jmp _main ; call into our C main()
 
-; do nothing for interrupts
+; non-maskarable interrupt
+; this is triggered on vblank by the PPU
 nmi:
+    inc _FrameCount
+    rti
+
+; do nothing for interrupts
 irq:
     rti
 

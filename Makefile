@@ -28,7 +28,7 @@ else
 endif
 
 run: $(NAME).nes
-	$(EMULATOR) $(NAME).nes
+	$(EMULATOR) --nogui $(NAME).nes
 
 # Additional C compiler flags and options.
 # Default: none
