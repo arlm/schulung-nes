@@ -51,6 +51,11 @@ SOURCES :=
 SOURCES += src/$(NAME).c
 SOURCES += src/reset.s
 
+# Path(s) to additional libraries required for linking the program
+# Use only if you don't want to place copies of the libraries in SRCDIR
+# Default: none
+LIBS    :=
+
 # Set OBJECTS to something like 'obj/foo.o obj/bar.o'.
 OBJECTS := $(addsuffix .o,$(basename $(addprefix $(OBJDIR)/,$(notdir $(SOURCES)))))
 

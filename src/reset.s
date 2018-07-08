@@ -153,3 +153,4 @@ irq:
 ; include CHR ROM data
 ; .incbin tells the assembler to load the “sprites.chr” file as-is and not to assemble it
 .incbin "sprites.chr"
+

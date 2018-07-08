@@ -2,3 +2,4 @@
 obj
 *.dbg
 *.nes
+.vscode

@@ -1,81 +1,61 @@
-#include <stddef.h>
 #include <stdint.h>
 
-// define PPU register aliases
-#define PPU_CTRL *((uint8_t *)0x2000)
-#define PPU_MASK *((uint8_t *)0x2001)
-#define PPU_STATUS *((uint8_t *)0x2002)
-#define PPU_SCROLL *((uint8_t *)0x2005)
-#define PPU_ADDRESS *((uint8_t *)0x2006)
-#define PPU_DATA *((uint8_t *)0x2007)
+// Sets the video standard to be used
+#define TV_NTSC 1
 
-// define PPU memory addresses
-#define PPU_PALETTE 0x3f00
-#define PPU_NAMETABLE_0 0x2000
-#define PPU_ATTRIB_0 0x23c0
-
-// define palette color aliases
-#define COLOR_BLACK 0x0f
-#define COLOR_BLUE 0x12
-#define COLOR_GREEN 0x1a
-#define COLOR_RED 0x16
-#define COLOR_WHITE 0x20
-#define COLOR_YELLOW 0x28
+#include "nes.h"
 
 // variables defined in assembly
-extern uint8_t FrameCount;
-#pragma zpsym("FrameCount");
+#include "reset.h"
+
+// variables defined in C
+#include "data.h"
 
 #pragma bss - name(push, "ZEROPAGE")
-size_t i;
-uintptr_t ppu_addr;
-uint8_t attr_offset;
+uint8_t i;           // loop counter
+uint8_t attr_offset; // offset into ATTRIBUTES
+
+// used by WritePPU method
+uintptr_t ppu_addr;      // destination PPU address
+uint8_t const *ppu_data; // pointer to data to copy to PPU
+uint8_t ppu_data_size;   // # of bytes to copy to PPU
+
 #pragma bss - name(pop)
 
-const char TEXT[] = "Ola, Calebe!";
+// reset scroll location to top-left of screen
+void ResetScroll()
+{
+    PPU_SCROLL = 0x00;
+    PPU_SCROLL = 0x00;
+}
 
-const uint8_t PALETTE[] = {
-    COLOR_BLUE,         // background color
-    0, 0, COLOR_RED,    // background palette 0
-    0,                  // ignored
-    0, 0, COLOR_GREEN,  // background palette 1
-    0,                  // ignored
-    0, 0, COLOR_YELLOW, // background palette 2
-    0,                  // ignored
-    0, 0, COLOR_WHITE,  // background palette 3
-};
+// enable NMI and rendering
+void EnablePPU()
+{
+    PPU_CTRL = PPUCTRL_NAMETABLE_0 | // use nametable 0
+               PPUCTRL_INC_1_HORIZ |
+               PPUCTRL_SPATTERN_0 | // background uses pattern table 0
+               PPUCTRL_BPATTERN_0 |
+               PPUCTRL_SSIZE_8x8 |
+               PPUCTRL_NMI_ON; // enable NMIs
 
-const uint8_t ATTRIBUTES[] = {
-    // layout 1
-    0x00, // 00 00 00 00 or 0 0
-          //                0 0
-    0x90, // 10 01 00 00 or 0 0
-          //                1 2
-    0x40, // 01 00 00 00 or 0 0
-          //                0 1
-    0xe0, // 11 10 00 00 or 0 0
-          //                2 3
+    PPU_MASK = PPUMASK_COLOR | // show colors
+               PPUMASK_L8_BSHOW |
+               PPUMASK_L8_SSHOW |
+               PPUMASK_BSHOW | // show background
+               PPUMASK_SSHOW;
+}
 
-    // layout 2
-    0x80, // 10 00 00 00 or 0 0
-          //                0 2
-    0x40, // 01 00 00 00 or 0 0
-          //                0 1
-    0x20, // 00 10 00 00 or 0 0
-          //                2 0
-    0xd0, // 11 01 00 00 or 0 0
-          //                1 3
+void WritePPU()
+{
+    PPU_ADDRESS = (uint8_t)(ppu_addr >> 8);
+    PPU_ADDRESS = (uint8_t)(ppu_addr);
 
-    // layout 3
-    0x40, // 01 00 00 00 or 0 0
-          //                0 1
-    0x20, // 00 10 00 00 or 0 0
-          //                2 0
-    0x90, // 10 01 00 00 or 0 0
-          //                1 2
-    0xc0, // 11 00 00 00 or 0 0
-          //                0 3
-};
+    for (i = 0; i < ppu_data_size; ++i)
+    {
+        PPU_DATA = ppu_data[i];
+    }
+}
 
 /**
  * main() will be called at the end of the initialization code in reset.s.
@@ -84,13 +64,10 @@ const uint8_t ATTRIBUTES[] = {
 void main(void)
 {
     // load the palette data into PPU memory $3f00-$3f1f
-    PPU_ADDRESS = (uint8_t)(PPU_PALETTE >> 8);
-    PPU_ADDRESS = (uint8_t)(PPU_PALETTE);
-
-    for (i = 0; i < sizeof(PALETTE); ++i)
-    {
-        PPU_DATA = PALETTE[i];
-    }
+    ppu_addr = PPU_PALETTE;
+    ppu_data = PALETTES;
+    ppu_data_size = sizeof(PALETTES);
+    WritePPU();
 
     // load the text sprites into the background (nametable 0)
     // nametable 0 is VRAM $2000-$23ff, so we'll choose an address in the
@@ -105,14 +82,10 @@ void main(void)
     // The NES has four nametables, arranged in a 2x2 pattern.
     // Each occupies a 1 KiB chunk of PPU address space, starting at $2000 at the top left,
     // $2400 at the top right, $2800 at the bottom left, and $2C00 at the bottom right.
-    ppu_addr = PPU_NAMETABLE_0 + 0x1ca;
-    PPU_ADDRESS = (uint8_t)(ppu_addr >> 8);
-    PPU_ADDRESS = (uint8_t)(ppu_addr);
-
-    for (i = 0; i < sizeof(TEXT); ++i)
-    {
-        PPU_DATA = (uint8_t)TEXT[i];
-    }
+    ppu_addr = PPU_NAMETABLE_0 + TEXT_OFFSET;
+    ppu_data = (uint8_t const *)TEXT;
+    ppu_data_size = sizeof(TEXT);
+    WritePPU();
 
     // load the text attributes into the background (attributetable 0)
     // The attribute table is a 64-byte array at the end of
@@ -128,49 +101,36 @@ void main(void)
     // topright, bottomleft, bottomright, each in the range 0 to 3,
     // the value of the byte is:
     // value = (topleft << 0) | (topright << 2) | (bottomleft << 4) | (bottomright << 6)
-    ppu_addr = PPU_ATTRIB_0 + 0x1a;
-    PPU_ADDRESS = (uint8_t)(ppu_addr >> 8);
-    PPU_ADDRESS = (uint8_t)(ppu_addr);
+    ppu_addr = PPU_ATTRIB_TABLE_0 + ATTR_OFFSET;
+    ppu_data = ATTRIBUTES;
+    ppu_data_size = ATTR_SIZE;
+    WritePPU();
 
-    for (i = 0; i < 4; ++i)
-    {
-        PPU_DATA = ATTRIBUTES[i];
-    }
+    // turn on rendering
+    ResetScroll();
+    EnablePPU();
 
-    // reset scroll location to top-left of screen
-    PPU_SCROLL = 0x00;
-    PPU_SCROLL = 0x00;
-
-    // enable NMI and rendering
-    PPU_CTRL = 0x80;
-    PPU_MASK = 0x1e;
-
-    attr_offset = 4;
+    attr_offset = ATTR_SIZE;
 
     // infinite loop
     while (1)
     {
-        // rotate colors every 30 frames, which is about every 0.5 seconds on NTSC
-        if (FrameCount == 30)
+        // rotate colors every half second
+        if (FrameCount == (FRAMES_PER_SEC / 2))
         {
-            PPU_ADDRESS = (uint8_t)(ppu_addr >> 8);
-            PPU_ADDRESS = (uint8_t)(ppu_addr);
+            // write attributes
+            ppu_data = ATTRIBUTES + attr_offset;
+            WritePPU();
 
-            for (i = 0; i < 4; ++i)
-            {
-                PPU_DATA = ATTRIBUTES[i + attr_offset];
-            }
+            // rotate attributes
+            attr_offset += ATTR_SIZE;
 
-            attr_offset += 4;
-
-            if (attr_offset == 12)
+            if (attr_offset == sizeof(ATTRIBUTES))
             {
                 attr_offset = 0;
             }
 
-            PPU_SCROLL = 0x00;
-            PPU_SCROLL = 0x00;
-
+            ResetScroll();
             FrameCount = 0;
         }
     };
