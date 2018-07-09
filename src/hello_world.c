@@ -1,4 +1,5 @@
 #include <stdint.h>
+#include <stddef.h>
 
 // Sets the video standard to be used
 #define TV_NTSC 1
@@ -20,6 +21,7 @@ uintptr_t ppu_addr;      // destination PPU address
 uint8_t const *ppu_data; // pointer to data to copy to PPU
 uint8_t ppu_data_size;   // # of bytes to copy to PPU
 
+uint8_t title_screen;
 #pragma bss - name(pop)
 
 // reset scroll location to top-left of screen
@@ -111,27 +113,42 @@ void main(void)
     EnablePPU();
 
     attr_offset = ATTR_SIZE;
+    title_screen = 0;
 
     // infinite loop
     while (1)
     {
+        WaitFrame();
+
         // rotate colors every half second
-        if (FrameCount == (FRAMES_PER_SEC / 2))
+        if (title_screen == 0)
         {
-            // write attributes
-            ppu_data = ATTRIBUTES + attr_offset;
-            WritePPU();
-
-            // rotate attributes
-            attr_offset += ATTR_SIZE;
-
-            if (attr_offset == sizeof(ATTRIBUTES))
+            if (FrameCount == (FRAMES_PER_SEC / 2))
             {
-                attr_offset = 0;
-            }
+                // write attributes
+                ppu_data = ATTRIBUTES + attr_offset;
+                WritePPU();
 
-            ResetScroll();
-            FrameCount = 0;
+                // rotate attributes
+                attr_offset += ATTR_SIZE;
+
+                if (attr_offset == sizeof(ATTRIBUTES))
+                {
+                    attr_offset = 0;
+                }
+
+                FrameCount = 0;
+            }
+        }
+        else
+        {
+        }
+
+        ResetScroll();
+
+        if (InputPort1 & BUTTON_ANY_ACTION)
+        {
+            title_screen = 1;
         }
     };
 };

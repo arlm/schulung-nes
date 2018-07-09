@@ -2,11 +2,13 @@
 
 .import _main
 .export __STARTUP__:absolute=1
-.exportzp _FrameCount
+.export _WaitFrame
+.exportzp _FrameCount, _InputPort1, _InputPort1Prev, _InputPort2, _InputPort2Prev
 
 ; linker-generated symbols
 
 .import __STACK_START__, __STACK_SIZE__
+.import __OAM_LOAD__
 .include "zeropage.inc"
 
 ; definitions
@@ -18,10 +20,21 @@ OAM_DMA       = $4014
 APU_DMC       = $4010
 APU_STATUS    = $4015
 APU_FRAME_CTR = $4017
+INPUT         = $4016
+INPUT_1       = $4016
+INPUT_2       = $4017
 
 .segment "ZEROPAGE"
 
-_FrameCount: .res 1
+_FrameCount:       .res 1
+frame_done:        .res 1
+
+_InputPort1:       .res 1
+_InputPort1Prev:   .res 1
+_InputPort2:       .res 1
+_InputPort2Prev:   .res 1
+input_port_1_test: .res 1
+input_port_2_test: .res 1
 
 .segment "HEADER"
 
@@ -78,6 +91,7 @@ start:
 
     ; We'll fill RAM with $00.
     txa
+
 @clear_ram:
     sta $00,   x
     sta $0100, x
@@ -97,6 +111,7 @@ start:
 	; Initialize OAM data in $0200 to have all y coordinates off-screen
 	; (e.g. set every fourth byte starting at $0200 to $ef)
 	lda #$ef
+
 @clear_oam:
 	sta $0200, x
 
@@ -108,6 +123,7 @@ start:
 
     ; Second of two waits for vertical blank to make sure that the
     ; PPU has stabilized
+
 @vblank_wait_2:
     bit PPU_STATUS
     bpl @vblank_wait_2
@@ -127,10 +143,112 @@ start:
 
     jmp _main ; call into our C main()
 
+_WaitFrame:
+    inc frame_done
+
+@loop:
+    lda frame_done
+    bne @loop
+
+    jsr UpdateInput
+
+    rts
+
+UpdateInput:
+    ; store previous input
+    lda _InputPort1
+    sta _InputPort1Prev
+    lda _InputPort2
+    sta _InputPort2Prev
+
+    ; strobe controllers
+    ldx #$01
+    stx INPUT
+    dex
+    stx INPUT
+
+    ldy #08
+
+@readInputTest:
+    lda INPUT_1
+    and #$01
+    cmp #$01
+    rol input_port_1_test
+    lda INPUT_2
+    and #$01
+    cmp #$01
+    rol input_port_2_test
+    dey
+    bne @readInputTest
+
+@restrobe:
+    ; strobe controllers
+    ldx #$01
+    stx INPUT
+    dex
+    stx INPUT
+
+    ldy #08
+    
+@readInputAgain:
+    lda INPUT_1
+    and #$01
+    cmp #$01
+    rol _InputPort1
+    lda INPUT_2
+    and #$01
+    cmp #$01
+    rol _InputPort2
+    dey
+    bne @readInputAgain
+
+    lda _InputPort1
+    cmp input_port_1_test
+    bne @cmpFailed
+    lda _InputPort2
+    cmp input_port_2_test
+    bne @cmpFailed
+
+    rts
+
+@cmpFailed:
+    lda _InputPort1
+    sta input_port_1_test
+    lda _InputPort2
+    sta input_port_2_test
+
+    jmp @restrobe
+
 ; non-maskarable interrupt
 ; this is triggered on vblank by the PPU
 nmi:
-    inc _FrameCount
+    ; save registers to stack
+    pha
+    txa
+    pha
+    tya
+    pha
+
+    ; start OAM DMA
+    lda #0
+    sta OAM_ADDRESS
+    lda #$02 ;#>(__OAM_LOAD__)
+    sta OAM_DMA
+
+    ; increment frame counter
+     inc _FrameCount
+
+    ; release _WaitFrame
+    lda #0
+    sta frame_done
+
+    ; restore registers and return
+    pla
+    tay
+    pla
+    tax
+    pla
+
     rti
 
 ; do nothing for interrupts
@@ -153,4 +271,3 @@ irq:
 ; include CHR ROM data
 ; .incbin tells the assembler to load the “sprites.chr” file as-is and not to assemble it
 .incbin "sprites.chr"
-

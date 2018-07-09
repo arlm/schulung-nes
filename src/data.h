@@ -1,9 +1,3 @@
-/**
- * data.h
- *
- * http://timcheeseman.com/nesdev/
- */
-
 #ifndef DATA_H_
 #define DATA_H_
 

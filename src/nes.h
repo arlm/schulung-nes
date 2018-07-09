@@ -1,11 +1,3 @@
-/**
- * nes.h
- *
- * http://timcheeseman.com/nesdev/
- *
- * Before including, #define either TV_NTSC or TV_PAL
- */
-
 #ifndef NES_H_
 #define NES_H_
 
@@ -117,5 +109,19 @@
 #else // TV_PAL
 #define FRAMES_PER_SEC 50
 #endif
+
+// standard controller buttons
+#define BUTTON_RIGHT 0x01
+#define BUTTON_LEFT 0x02
+#define BUTTON_DOWN 0x04
+#define BUTTON_UP 0x08
+#define BUTTON_START 0x10
+#define BUTTON_SELECT 0x20
+#define BUTTON_B 0x40
+#define BUTTON_A 0x80
+
+#define BUTTON_ANY 0xff
+#define BUTTON_ANY_DIRECTION 0x0f
+#define BUTTON_ANY_ACTION 0xf0
 
 #endif // NES_H_
