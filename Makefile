@@ -81,12 +81,14 @@ $(OBJDIR):
 vpath %c $(foreach c,$(SOURCES),$(dir $c))
 
 $(OBJDIR)/%.o: %.c
+	sed -ie 's/bss - name/bss-name/g' $<
 	$(COMPILE) -Oi $(CFLAGS) -o $(@:.o=.s) $< --add-source
 	$(ASSEMBLE) $(ASFLAGS) -o $@ $(@:.o=.s)
 
 vpath %c65 $(foreach c65,$(SOURCES),$(dir $c65))
 
 $(OBJDIR)/%.o: %.c65
+	sed -ie 's/bss - name/bss-name/g' $<
 	$(COMPILE) -Oi $(CFLAGS) -o $(@:.o=.s) $< --add-source
 	$(ASSEMBLE) $(ASFLAGS) -o $@ $(@:.o=.s)
 

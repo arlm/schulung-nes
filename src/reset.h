@@ -1,6 +1,8 @@
 #ifndef RESET_H_
 #define RESET_H_
 
+#include <stdint.h>
+
 extern uint8_t FrameCount;
 #pragma zpsym("FrameCount");
 
@@ -16,6 +18,6 @@ extern uint8_t InputPort2;
 extern uint8_t InputPort2Prev;
 #pragma zpsym("InputPort2Prev");
 
-void __fastcall__ WaitFrame(void);
+void WaitFrame(void);
 
 #endif // RESET_H_

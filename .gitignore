@@ -3,3 +3,4 @@ obj
 *.dbg
 *.nes
 .vscode
+*.ce

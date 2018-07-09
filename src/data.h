@@ -7,19 +7,19 @@
 
 #define TEXT_X 10
 #define TEXT_Y 14
-#define TEXT_OFFSET (TEXT_Y * NUM_COLS + TEXT_X)
+#define TEXT_OFFSET ((NAMETABLE_OFFSET + TEXT_Y) * NUM_COLS + TEXT_X)
 char const TEXT[] = "Ola, Calebe!";
 
-uint8_t const PALETTES_MAIN[] = {
+uint8_t const PALETTES[] = {
     COLOR_BLACK, // background color
 
     COLOR_BLUE, COLOR_WHITE, COLOR_RED, // background palette 0
     0,                                  // ignored
-    0, 0, 0,                            // background palette 1
+    0, 0, COLOR_GREEN,                  // background palette 1
     0,                                  // ignored
-    0, 0, 0,                            // background palette 2
+    0, 0, COLOR_YELLOW,                 // background palette 2
     0,                                  // ignored
-    0, 0, 0,                            // background palette 3
+    0, 0, COLOR_WHITE,                  // background palette 3
 
     COLOR_BLACK, // background color (mirror)
 
@@ -30,28 +30,6 @@ uint8_t const PALETTES_MAIN[] = {
     0, 0, 0,                               // sprite palette 2
     0,                                     // ignored
     0, 0, 0,                               // sprite palette 3
-};
-
-uint8_t const PALETTES_TITLE[] = {
-    COLOR_BLUE, // background color
-
-    0, 0, COLOR_RED,    // background palette 0
-    0,                  // ignored
-    0, 0, COLOR_GREEN,  // background palette 1
-    0,                  // ignored
-    0, 0, COLOR_YELLOW, // background palette 2
-    0,                  // ignored
-    0, 0, COLOR_WHITE,  // background palette 3
-
-    COLOR_BLUE, // background color (mirror)
-
-    0, 0, 0, // sprite palette 0
-    0,       // ignored
-    0, 0, 0, // sprite palette 1
-    0,       // ignored
-    0, 0, 0, // sprite palette 2
-    0,       // ignored
-    0, 0, 0  // sprite palette 3
 };
 
 #define ATTR_SIZE 4

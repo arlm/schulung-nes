@@ -14,7 +14,6 @@
 
 #pragma bss-name(push, "ZEROPAGE")
 uint8_t i;           // loop counter
-uint8_t j;           // loop counter
 uint8_t attr_offset; // offset into ATTRIBUTES
 
 // used by WritePPU method
@@ -23,6 +22,7 @@ uint8_t const *ppu_data; // pointer to data to copy to PPU
 uint8_t ppu_data_size;   // # of bytes to copy to PPU
 
 uint8_t title_screen;
+uint8_t drawing_line;
 #pragma bss-name(pop)
 
 #pragma bss-name(push, "OAM")
@@ -37,14 +37,30 @@ void ResetScroll()
 }
 
 // enable NMI and rendering
-void EnablePPU()
+void EnablePPU_NameTable_0()
 {
     PPU_CTRL = PPUCTRL_NAMETABLE_0 | // use nametable 0
-               PPUCTRL_INC_1_HORIZ | //
+               PPUCTRL_INC_1_HORIZ | // PPU_DATA increments 1 horizontally
                PPUCTRL_SPATTERN_0 |  // background uses pattern table 0
                PPUCTRL_BPATTERN_0 |  // sprites uses pattern table 0
-               PPUCTRL_SSIZE_8x8 |   // sprite size of 8x8
+               PPUCTRL_SSIZE_16x16 | // sprite size of 8x8
                PPUCTRL_NMI_ON;       // enable NMIs
+
+    PPU_MASK = PPUMASK_COLOR |    // show colors
+               PPUMASK_L8_BSHOW | // show background tiles in leftmost 8px
+               PPUMASK_L8_SSHOW | // show sprites in leftmost 8px
+               PPUMASK_BSHOW |    // show background
+               PPUMASK_SSHOW;     // show background tiles in leftmost 8px
+}
+
+void EnablePPU_NameTable_1()
+{
+    PPU_CTRL = PPUCTRL_NAMETABLE_1 | // use nametable 1
+               PPUCTRL_INC_1_HORIZ | // PPU_DATA increments 1 horizontally
+               PPUCTRL_SPATTERN_0 |  // background uses pattern table 0
+               PPUCTRL_BPATTERN_0 |  // sprites uses pattern table 0
+               PPUCTRL_SSIZE_16x16 | // sprite size of 8x8
+               PPUCTRL_NMI_OFF;      // enable NMIs
 
     PPU_MASK = PPUMASK_COLOR |    // show colors
                PPUMASK_L8_BSHOW | // show background tiles in leftmost 8px
@@ -64,36 +80,50 @@ void WritePPU()
     }
 }
 
-void DrawBackground()
+void DrawBackground_Top()
 {
     PPU_ADDRESS = (uint8_t)((PPU_NAMETABLE_0 + NAMETABLE_OFFSET) >> 8);
     PPU_ADDRESS = (uint8_t)(PPU_NAMETABLE_0 + NAMETABLE_OFFSET);
 
     // draw top
     PPU_DATA = BORDER_TL;
+
     for (i = 0; i < (NUM_COLS - 2); ++i)
     {
         PPU_DATA = BORDER_T;
     }
-    PPU_DATA = BORDER_TR;
 
-    // draw sides
-    for (i = 0; i < (NUM_ROWS - 2); ++i)
+    PPU_DATA = BORDER_TR;
+}
+
+void DrawBackground_Middle()
+{
+    PPU_ADDRESS = (uint8_t)((PPU_NAMETABLE_0 + NAMETABLE_OFFSET + NUM_COLS * drawing_line) >> 8);
+    PPU_ADDRESS = (uint8_t)(PPU_NAMETABLE_0 + NAMETABLE_OFFSET + NUM_COLS * drawing_line);
+
+    PPU_DATA = BORDER_L;
+
+    for (i = 0; i < (NUM_COLS - 2); ++i)
     {
-        PPU_DATA = BORDER_L;
-        for (j = 0; j < (NUM_COLS - 2); ++j)
-        {
-            PPU_DATA = BLANK_TILE;
-        }
-        PPU_DATA = BORDER_R;
+        PPU_DATA = BLANK_TILE;
     }
+
+    PPU_DATA = BORDER_R;
+}
+
+void DrawBackground_Bottom()
+{
+    PPU_ADDRESS = (uint8_t)((PPU_NAMETABLE_0 + NAMETABLE_OFFSET + NUM_COLS * (NUM_ROWS - 1)) >> 8);
+    PPU_ADDRESS = (uint8_t)(PPU_NAMETABLE_0 + NAMETABLE_OFFSET + NUM_COLS * (NUM_ROWS - 1));
 
     // draw bottom
     PPU_DATA = BORDER_BL;
+
     for (i = 0; i < (NUM_COLS - 2); ++i)
     {
         PPU_DATA = BORDER_B;
     }
+
     PPU_DATA = BORDER_BR;
 }
 
@@ -103,6 +133,14 @@ void ClearText()
     PPU_ADDRESS = (uint8_t)(PPU_NAMETABLE_0 + TEXT_OFFSET);
 
     for (i = 0; i < (sizeof(TEXT)); ++i)
+    {
+        PPU_DATA = BLANK_TILE;
+    }
+
+    PPU_ADDRESS = (uint8_t)((PPU_ATTRIB_TABLE_0 + ATTR_OFFSET) >> 8);
+    PPU_ADDRESS = (uint8_t)(PPU_ATTRIB_TABLE_0 + ATTR_OFFSET);
+
+    for (i = 0; i < ATTR_SIZE; ++i)
     {
         PPU_DATA = BLANK_TILE;
     }
@@ -116,8 +154,8 @@ void main(void)
 {
     // load the palette data into PPU memory $3f00-$3f1f
     ppu_addr = PPU_PALETTE;
-    ppu_data = PALETTES_TITLE;
-    ppu_data_size = sizeof(PALETTES_TITLE);
+    ppu_data = PALETTES;
+    ppu_data_size = sizeof(PALETTES);
     WritePPU();
 
     // load the text sprites into the background (nametable 0)
@@ -159,10 +197,11 @@ void main(void)
 
     // turn on rendering
     ResetScroll();
-    EnablePPU();
+    EnablePPU_NameTable_0();
 
     attr_offset = ATTR_SIZE;
     title_screen = 0;
+    drawing_line = 0;
 
     // infinite loop
     while (1)
@@ -177,18 +216,8 @@ void main(void)
                 ClearText();
 
                 title_screen = 1;
-    
-                // load the palette data into PPU memory $3f00-$3f1f
-                ppu_addr = PPU_PALETTE;
-                ppu_data = PALETTES_MAIN;
-                ppu_data_size = sizeof(PALETTES_MAIN);
-                WritePPU();
 
-                DrawBackground();
-
-                player.x = (MAX_X / 2) - (SPRITE_WIDTH / 2);
-                player.y = (MAX_Y / 2) - (SPRITE_HEIGHT / 2) - SPRITE_HEIGHT * 2;
-                player.tile_index = SPRITE_PLAYER;
+                continue;
             }
 
             if (FrameCount == (FRAMES_PER_SEC / 2))
@@ -211,6 +240,30 @@ void main(void)
         }
         else
         {
+            if (drawing_line == 0)
+            {
+                DrawBackground_Top();
+                ++drawing_line;
+                continue;
+            }
+            else if (drawing_line < NUM_ROWS - 1)
+            {
+                DrawBackground_Middle();
+                ++drawing_line;
+                continue;
+            }
+            else if (drawing_line == NUM_ROWS - 1)
+            {
+                DrawBackground_Bottom();
+                ++drawing_line;
+
+                player.x = (MAX_X / 2) - (SPRITE_WIDTH / 2);
+                player.y = (MAX_Y / 2) - (SPRITE_HEIGHT / 2) - SPRITE_HEIGHT * 2;
+                player.tile_index = SPRITE_PLAYER;
+
+                continue;
+            }
+
             ResetScroll();
 
             if (InputPort1 & BUTTON_UP)
