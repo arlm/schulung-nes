@@ -100,8 +100,28 @@
 
 // PPU resolution in 8x8 pixel cells
 // see http://wiki.nesdev.com/w/index.php/PPU_nametables
+#define MIN_X 0
+#define MAX_X 256
 #define NUM_COLS 32
+
+// Sprites in screen
+#ifdef TV_NTSC
+#define MIN_Y 8
+#define MAX_Y 231
+#define NUM_ROWS 28
+#define FIRST_ROW 1
+#define LAST_ROW 27
+#else // TV_PAL
+#define MIN_Y 0
+#define MAX_Y 239
 #define NUM_ROWS 30
+#define FIRST_ROW 0
+#define LAST_ROW 29
+#endif
+
+#define NAMETABLE_OFFSET (NUM_COLS * FIRST_ROW)
+#define SPRITE_HEIGHT 8
+#define SPRITE_WIDTH 8
 
 // PPU framerate
 #ifdef TV_NTSC
@@ -109,6 +129,15 @@
 #else // TV_PAL
 #define FRAMES_PER_SEC 50
 #endif
+
+// OAM sprite
+typedef struct sprite
+{
+    uint8_t y;
+    uint8_t tile_index;
+    uint8_t attributes;
+    uint8_t x;
+} sprite_t;
 
 // standard controller buttons
 #define BUTTON_RIGHT 0x01

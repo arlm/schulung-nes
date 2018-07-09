@@ -12,8 +12,9 @@
 // variables defined in C
 #include "data.h"
 
-#pragma bss - name(push, "ZEROPAGE")
+#pragma bss-name(push, "ZEROPAGE")
 uint8_t i;           // loop counter
+uint8_t j;           // loop counter
 uint8_t attr_offset; // offset into ATTRIBUTES
 
 // used by WritePPU method
@@ -22,7 +23,11 @@ uint8_t const *ppu_data; // pointer to data to copy to PPU
 uint8_t ppu_data_size;   // # of bytes to copy to PPU
 
 uint8_t title_screen;
-#pragma bss - name(pop)
+#pragma bss-name(pop)
+
+#pragma bss-name(push, "OAM")
+sprite_t player;
+#pragma bss-name(pop)
 
 // reset scroll location to top-left of screen
 void ResetScroll()
@@ -35,17 +40,17 @@ void ResetScroll()
 void EnablePPU()
 {
     PPU_CTRL = PPUCTRL_NAMETABLE_0 | // use nametable 0
-               PPUCTRL_INC_1_HORIZ |
-               PPUCTRL_SPATTERN_0 | // background uses pattern table 0
-               PPUCTRL_BPATTERN_0 |
-               PPUCTRL_SSIZE_8x8 |
-               PPUCTRL_NMI_ON; // enable NMIs
+               PPUCTRL_INC_1_HORIZ | //
+               PPUCTRL_SPATTERN_0 |  // background uses pattern table 0
+               PPUCTRL_BPATTERN_0 |  // sprites uses pattern table 0
+               PPUCTRL_SSIZE_8x8 |   // sprite size of 8x8
+               PPUCTRL_NMI_ON;       // enable NMIs
 
-    PPU_MASK = PPUMASK_COLOR | // show colors
-               PPUMASK_L8_BSHOW |
-               PPUMASK_L8_SSHOW |
-               PPUMASK_BSHOW | // show background
-               PPUMASK_SSHOW;
+    PPU_MASK = PPUMASK_COLOR |    // show colors
+               PPUMASK_L8_BSHOW | // show background tiles in leftmost 8px
+               PPUMASK_L8_SSHOW | // show sprites in leftmost 8px
+               PPUMASK_BSHOW |    // show background
+               PPUMASK_SSHOW;     // show background tiles in leftmost 8px
 }
 
 void WritePPU()
@@ -59,6 +64,50 @@ void WritePPU()
     }
 }
 
+void DrawBackground()
+{
+    PPU_ADDRESS = (uint8_t)((PPU_NAMETABLE_0 + NAMETABLE_OFFSET) >> 8);
+    PPU_ADDRESS = (uint8_t)(PPU_NAMETABLE_0 + NAMETABLE_OFFSET);
+
+    // draw top
+    PPU_DATA = BORDER_TL;
+    for (i = 0; i < (NUM_COLS - 2); ++i)
+    {
+        PPU_DATA = BORDER_T;
+    }
+    PPU_DATA = BORDER_TR;
+
+    // draw sides
+    for (i = 0; i < (NUM_ROWS - 2); ++i)
+    {
+        PPU_DATA = BORDER_L;
+        for (j = 0; j < (NUM_COLS - 2); ++j)
+        {
+            PPU_DATA = BLANK_TILE;
+        }
+        PPU_DATA = BORDER_R;
+    }
+
+    // draw bottom
+    PPU_DATA = BORDER_BL;
+    for (i = 0; i < (NUM_COLS - 2); ++i)
+    {
+        PPU_DATA = BORDER_B;
+    }
+    PPU_DATA = BORDER_BR;
+}
+
+void ClearText()
+{
+    PPU_ADDRESS = (uint8_t)((PPU_NAMETABLE_0 + TEXT_OFFSET) >> 8);
+    PPU_ADDRESS = (uint8_t)(PPU_NAMETABLE_0 + TEXT_OFFSET);
+
+    for (i = 0; i < (sizeof(TEXT)); ++i)
+    {
+        PPU_DATA = BLANK_TILE;
+    }
+}
+
 /**
  * main() will be called at the end of the initialization code in reset.s.
  * Unlike C programs on a computer, it takes no arguments and returns no value.
@@ -67,8 +116,8 @@ void main(void)
 {
     // load the palette data into PPU memory $3f00-$3f1f
     ppu_addr = PPU_PALETTE;
-    ppu_data = PALETTES;
-    ppu_data_size = sizeof(PALETTES);
+    ppu_data = PALETTES_TITLE;
+    ppu_data_size = sizeof(PALETTES_TITLE);
     WritePPU();
 
     // load the text sprites into the background (nametable 0)
@@ -123,6 +172,25 @@ void main(void)
         // rotate colors every half second
         if (title_screen == 0)
         {
+            if (InputPort1 & BUTTON_ANY_ACTION)
+            {
+                ClearText();
+
+                title_screen = 1;
+    
+                // load the palette data into PPU memory $3f00-$3f1f
+                ppu_addr = PPU_PALETTE;
+                ppu_data = PALETTES_MAIN;
+                ppu_data_size = sizeof(PALETTES_MAIN);
+                WritePPU();
+
+                DrawBackground();
+
+                player.x = (MAX_X / 2) - (SPRITE_WIDTH / 2);
+                player.y = (MAX_Y / 2) - (SPRITE_HEIGHT / 2) - SPRITE_HEIGHT * 2;
+                player.tile_index = SPRITE_PLAYER;
+            }
+
             if (FrameCount == (FRAMES_PER_SEC / 2))
             {
                 // write attributes
@@ -138,17 +206,44 @@ void main(void)
                 }
 
                 FrameCount = 0;
+                ResetScroll();
             }
         }
         else
         {
-        }
+            ResetScroll();
 
-        ResetScroll();
+            if (InputPort1 & BUTTON_UP)
+            {
+                if (player.y > MIN_Y + SPRITE_HEIGHT)
+                {
+                    --player.y;
+                }
+            }
 
-        if (InputPort1 & BUTTON_ANY_ACTION)
-        {
-            title_screen = 1;
+            if (InputPort1 & BUTTON_DOWN)
+            {
+                if (player.y < MAX_Y - (2 * SPRITE_HEIGHT))
+                {
+                    ++player.y;
+                }
+            }
+
+            if (InputPort1 & BUTTON_LEFT)
+            {
+                if (player.x > MIN_X + SPRITE_WIDTH)
+                {
+                    --player.x;
+                }
+            }
+
+            if (InputPort1 & BUTTON_RIGHT)
+            {
+                if (player.x < MAX_X - (2 * SPRITE_WIDTH))
+                {
+                    ++player.x;
+                }
+            }
         }
     };
 };

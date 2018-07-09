@@ -7,10 +7,9 @@ EMULATOR = fceux
 CONFIG  := nes.ini
 
 # Toolchain stuff.
-C_COMPILE := cc65
-COMPILE   := cl65
-ASSEMBLE  := ca65 
-LINK      := cl65
+COMPILE 	:= cc65
+ASSEMBLE  	:= ca65
+LINK      	:= cl65
 
 # Path to the directory where object files are to be stored.
 OBJDIR := obj/nes
@@ -33,15 +32,16 @@ run: $(NAME).nes
 
 # Additional C compiler flags and options.
 # Default: none
-CFLAGS  = -t nes  -g --debug-info  -I .
+CFLAGS  = -t nes -g --debug-info  -I .
 
 # Additional assembler flags and options.
 # Default: none
-ASFLAGS = -t nes  -g --debug-info  -I .
+ASFLAGS = -t nes -g --debug-info  -I .
 
 # Additional linker flags and options.
 # Default: none
-LDFLAGS = -t nes -C $(CONFIG)  -Wl --dbgfile,$(NAME).dbg
+LDFLAGS = -t nes -C $(CONFIG) -Wl --dbgfile,$(NAME).dbg
+
 REMOVES += $(NAME).dbg
 
 # Program ROM file name (game code goes here).
@@ -81,13 +81,13 @@ $(OBJDIR):
 vpath %c $(foreach c,$(SOURCES),$(dir $c))
 
 $(OBJDIR)/%.o: %.c
-	$(C_COMPILE) -Oi $(CFLAGS) -o $(@:.o=.s) $< --add-source
+	$(COMPILE) -Oi $(CFLAGS) -o $(@:.o=.s) $< --add-source
 	$(ASSEMBLE) $(ASFLAGS) -o $@ $(@:.o=.s)
 
 vpath %c65 $(foreach c65,$(SOURCES),$(dir $c65))
 
 $(OBJDIR)/%.o: %.c65
-	$(C_COMPILE) -Oi $(CFLAGS) -o $(@:.o=.s) $< --add-source
+	$(COMPILE) -Oi $(CFLAGS) -o $(@:.o=.s) $< --add-source
 	$(ASSEMBLE) $(ASFLAGS) -o $@ $(@:.o=.s)
 
 vpath %a $(foreach a,$(SOURCES),$(dir $a))

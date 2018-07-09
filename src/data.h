@@ -10,8 +10,31 @@
 #define TEXT_OFFSET (TEXT_Y * NUM_COLS + TEXT_X)
 char const TEXT[] = "Ola, Calebe!";
 
-uint8_t const PALETTES[] = {
-    COLOR_BLUE,         // background color
+uint8_t const PALETTES_MAIN[] = {
+    COLOR_BLACK, // background color
+
+    COLOR_BLUE, COLOR_WHITE, COLOR_RED, // background palette 0
+    0,                                  // ignored
+    0, 0, 0,                            // background palette 1
+    0,                                  // ignored
+    0, 0, 0,                            // background palette 2
+    0,                                  // ignored
+    0, 0, 0,                            // background palette 3
+
+    COLOR_BLACK, // background color (mirror)
+
+    COLOR_DGRAY, COLOR_WHITE, COLOR_LGRAY, // sprite palette 0
+    0,                                     // ignored
+    0, 0, 0,                               // sprite palette 1
+    0,                                     // ignored
+    0, 0, 0,                               // sprite palette 2
+    0,                                     // ignored
+    0, 0, 0,                               // sprite palette 3
+};
+
+uint8_t const PALETTES_TITLE[] = {
+    COLOR_BLUE, // background color
+
     0, 0, COLOR_RED,    // background palette 0
     0,                  // ignored
     0, 0, COLOR_GREEN,  // background palette 1
@@ -19,6 +42,16 @@ uint8_t const PALETTES[] = {
     0, 0, COLOR_YELLOW, // background palette 2
     0,                  // ignored
     0, 0, COLOR_WHITE,  // background palette 3
+
+    COLOR_BLUE, // background color (mirror)
+
+    0, 0, 0, // sprite palette 0
+    0,       // ignored
+    0, 0, 0, // sprite palette 1
+    0,       // ignored
+    0, 0, 0, // sprite palette 2
+    0,       // ignored
+    0, 0, 0  // sprite palette 3
 };
 
 #define ATTR_SIZE 4
@@ -54,5 +87,19 @@ uint8_t const ATTRIBUTES[] = {
     0xc0, // 11 00 00 00 or 0 0
     //                      0 3
 };
+
+// tile indices
+#define BLANK_TILE 0x00
+
+#define BORDER_TL 0x01
+#define BORDER_TR 0x02
+#define BORDER_BL 0x11
+#define BORDER_BR 0x12
+#define BORDER_T 0x04
+#define BORDER_B 0x14
+#define BORDER_L 0x03
+#define BORDER_R 0x13
+
+#define SPRITE_PLAYER 0x10
 
 #endif // DATA_H_
