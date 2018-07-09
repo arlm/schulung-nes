@@ -7,9 +7,10 @@ EMULATOR = fceux
 CONFIG  := nes.ini
 
 # Toolchain stuff.
-COMPILE  := cl65
-ASSEMBLE := ca65 
-LINK     := cl65
+C_COMPILE := cc65
+COMPILE   := cl65
+ASSEMBLE  := ca65 
+LINK      := cl65
 
 # Path to the directory where object files are to be stored.
 OBJDIR := obj/nes
@@ -80,13 +81,13 @@ $(OBJDIR):
 vpath %c $(foreach c,$(SOURCES),$(dir $c))
 
 $(OBJDIR)/%.o: %.c
-	$(COMPILE) --create-dep $(@:.o=.d) -S $(CFLAGS) -o $(@:.o=.s) $<
+	$(C_COMPILE) -Oi $(CFLAGS) -o $(@:.o=.s) $< --add-source
 	$(ASSEMBLE) $(ASFLAGS) -o $@ $(@:.o=.s)
 
 vpath %c65 $(foreach c65,$(SOURCES),$(dir $c65))
 
 $(OBJDIR)/%.o: %.c65
-	$(COMPILE) --create-dep $(@:.o=.d) -S $(CFLAGS) -o $(@:.o=.s) $<
+	$(C_COMPILE) -Oi $(CFLAGS) -o $(@:.o=.s) $< --add-source
 	$(ASSEMBLE) $(ASFLAGS) -o $@ $(@:.o=.s)
 
 vpath %a $(foreach a,$(SOURCES),$(dir $a))
