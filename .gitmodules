@@ -1,0 +1,6 @@
+[submodule "tools/makechr"]
+	path = tools/makechr
+	url = git@github.com:arlm/makechr.git
+[submodule "tools/nesst"]
+	path = tools/nesst
+	url = git@github.com:arlm/nesst.git

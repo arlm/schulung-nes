@@ -10,3 +10,4 @@ error.png
 *.reuse.png
 *.chr.png
 *.palette.png
+Pipfile.lock
