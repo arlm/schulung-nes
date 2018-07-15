@@ -1,4 +1,4 @@
-NAME = hello_world
+NAME = calebe
 EMULATOR = fceux
 
 # Custom linker configuration file

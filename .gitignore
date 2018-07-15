@@ -4,3 +4,9 @@ obj
 *.nes
 .vscode
 *.ce
+error.png
+*.nametable.png
+*.grid.png
+*.reuse.png
+*.chr.png
+*.palette.png
