@@ -10,6 +10,8 @@
 #include "data.h"
 #include "calebe.h"
 
+#include "rle.h"
+
 // variables defined in assembly
 #include "reset.h"
 

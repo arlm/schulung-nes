@@ -12,6 +12,20 @@
 
 .include "zeropage.inc"
 
+; UnRLE for backgrounds
+.include "lib/rle.inc"
+
+; famitone2 settings and include
+.define FT_PAL_SUPPORT  0
+.define FT_NTSC_SUPPORT 1
+.define FT_PITCH_FIX    0
+.define FT_THREAD       1
+.define FT_DPCM_ENABLE  0
+.define FT_SFX_ENABLE   1
+FT_SFX_STREAMS = 1
+FT_DPCM_OFF    = $c000
+.include "lib/famitone2.inc"
+
 ; definitions
 PPU_CTRL      = $2000
 PPU_MASK      = $2001
@@ -265,7 +279,13 @@ irq:
 
 .segment "RODATA"
 
-; nothing yet
+; music data
+
+MUSIC_DATA:
+.include "music.s"
+
+SFX_DATA:
+.include "sfx.s"
 
 .segment "VECTORS"
 
