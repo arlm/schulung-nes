@@ -4,11 +4,36 @@
 #include <stdint.h>
 
 #include "nes.h"
+#include "calebe.h"
+
+extern uint8_t i;
+
+#pragma bss-name(push, "ZEROPAGE")
+// used by WritePPU method
+extern uintptr_t ppu_addr;      // destination PPU address
+extern uint8_t const *ppu_data; // pointer to data to copy to PPU
+extern uint8_t ppu_data_size;   // # of bytes to copy to PPU
+
+extern uint8_t drawing_line;
+#pragma bss-name(pop)
 
 #define TEXT_X 10
 #define TEXT_Y 14
 #define TEXT_OFFSET ((NAMETABLE_OFFSET + TEXT_Y) * NUM_COLS + TEXT_X)
 char const TEXT[] = "Ola, Calebe!";
+
+uint8_t pattern_table = 0; // 0 or 1
+uint8_t fade_palette[sizeof(PAL_LEVEL)];
+uint8_t fade_count;
+
+typedef enum state
+{
+    STATE_TITLE,
+    STATE_LEVEL,
+    STATE_CREDITS
+} state_t;
+
+state_t state;
 
 uint8_t const PALETTES[] = {
     COLOR_BLACK, // background color

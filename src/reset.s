@@ -176,6 +176,7 @@ UpdateInput:
 
     ; get first reading and save to temp
     jsr ReadInput
+
 @mismatch:
     lda _InputPort1
     sta temp1
@@ -202,6 +203,7 @@ ReadInput:
     stx INPUT
 
     ldy #08         ; loop over all 8 buttons
+
 @loop:
     lda INPUT_1     ; read button state
     and #$03        ; mask lowest 2 bits
@@ -269,4 +271,4 @@ irq:
 
 ; include CHR ROM data
 ; .incbin tells the assembler to load the “sprites.chr” file as-is and not to assemble it
-.incbin "sprites.chr"
+.incbin "data/sprites.chr"

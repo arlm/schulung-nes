@@ -11,3 +11,4 @@ error.png
 *.chr.png
 *.palette.png
 Pipfile.lock
+includes/data.h

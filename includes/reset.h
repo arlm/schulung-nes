@@ -20,4 +20,6 @@ extern uint8_t InputPort2Prev;
 
 void WaitFrame(void);
 
+void WaitVBlank(void);
+
 #endif // RESET_H_
