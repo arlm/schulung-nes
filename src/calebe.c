@@ -23,12 +23,24 @@ void ResetScroll()
 // enable NMI and rendering
 void EnablePPU()
 {
-    PPU_CTRL = PPUCTRL_NAMETABLE_0 | // use nametable 0
-               PPUCTRL_INC_1_HORIZ | // PPU_DATA increments 1 horizontally
-               PPUCTRL_SPATTERN_0 |  // background uses pattern table 0
-               PPUCTRL_BPATTERN_0 |  // sprites uses pattern table 0
-               PPUCTRL_SSIZE_16x16 | // sprite size of 8x8
-               PPUCTRL_NMI_ON;       // enable NMIs
+    if (pattern_table == 0)
+    {
+        PPU_CTRL = PPUCTRL_NAMETABLE_0 | // use nametable 0
+                   PPUCTRL_INC_1_HORIZ | // PPU_DATA increments 1 horizontally
+                   PPUCTRL_SPATTERN_0 |  // background uses pattern table 0
+                   PPUCTRL_BPATTERN_0 |  // sprites uses pattern table 0
+                   PPUCTRL_SSIZE_16x16 | // sprite size of 8x8
+                   PPUCTRL_NMI_ON;       // enable NMIs
+    }
+    else
+    {
+        PPU_CTRL = PPUCTRL_NAMETABLE_0 | // use nametable 0
+                   PPUCTRL_INC_1_HORIZ | // PPU_DATA increments 1 horizontally
+                   PPUCTRL_SPATTERN_1 |  // background uses pattern table 1
+                   PPUCTRL_BPATTERN_1 |  // sprites uses pattern table 1
+                   PPUCTRL_SSIZE_16x16 | // sprite size of 8x8
+                   PPUCTRL_NMI_ON;       // enable NMIs
+    }
 
     PPU_MASK = PPUMASK_COLOR |    // show colors
                PPUMASK_L8_BSHOW | // show background tiles in leftmost 8px
@@ -56,8 +68,16 @@ void WritePPU()
 
 void DrawBackground()
 {
-    PPU_ADDRESS = (uint8_t)(PPU_NAMETABLE_0 >> 8);
-    PPU_ADDRESS = (uint8_t)(PPU_NAMETABLE_0);
+    if (pattern_table == 0)
+    {
+        PPU_ADDRESS = (uint8_t)(PPU_NAMETABLE_0 >> 8);
+        PPU_ADDRESS = (uint8_t)(PPU_NAMETABLE_0);
+    }
+    else
+    {
+        PPU_ADDRESS = (uint8_t)(PPU_NAMETABLE_1 >> 8);
+        PPU_ADDRESS = (uint8_t)(PPU_NAMETABLE_1);
+    }
 }
 
 void HandleInput()
@@ -110,7 +130,15 @@ void main(void)
     // The NES has four nametables, arranged in a 2x2 pattern.
     // Each occupies a 1 KiB chunk of PPU address space, starting at $2000 at the top left,
     // $2400 at the top right, $2800 at the bottom left, and $2C00 at the bottom right.
-    ppu_addr = PPU_NAMETABLE_0 + TEXT_OFFSET;
+    if (pattern_table == 0)
+    {
+        ppu_addr = PPU_NAMETABLE_0 + TEXT_OFFSET;
+    }
+    else
+    {
+        ppu_addr = PPU_NAMETABLE_1 + TEXT_OFFSET;
+    }
+
     ppu_data = (uint8_t const *)TEXT;
     ppu_data_size = length_of_TEXT;
     WritePPU();
@@ -129,11 +157,20 @@ void main(void)
     // topright, bottomleft, bottomright, each in the range 0 to 3,
     // the value of the byte is:
     // value = (topleft << 0) | (topright << 2) | (bottomleft << 4) | (bottomright << 6)
-    ppu_addr = PPU_ATTRIB_TABLE_0 + ATTR_OFFSET;
+    if (pattern_table == 0)
+    {
+        ppu_addr = PPU_ATTRIB_TABLE_0 + ATTR_OFFSET;
+    }
+    else
+    {
+        ppu_addr = PPU_ATTRIB_TABLE_1 + ATTR_OFFSET;
+    }
+
     ppu_data = ATTRIBUTES;
     ppu_data_size = ATTR_SIZE;
     WritePPU();
 
+    pattern_table = 0;
     // turn on rendering
     ResetScroll();
     EnablePPU();

@@ -10,8 +10,16 @@
 
 void DrawBackground_Top()
 {
-    PPU_ADDRESS = (uint8_t)((PPU_NAMETABLE_0 + NAMETABLE_OFFSET) >> 8);
-    PPU_ADDRESS = (uint8_t)(PPU_NAMETABLE_0 + NAMETABLE_OFFSET);
+    if (pattern_table == 0)
+    {
+        PPU_ADDRESS = (uint8_t)((PPU_NAMETABLE_0 + NAMETABLE_OFFSET) >> 8);
+        PPU_ADDRESS = (uint8_t)(PPU_NAMETABLE_0 + NAMETABLE_OFFSET);
+    }
+    else
+    {
+        PPU_ADDRESS = (uint8_t)((PPU_NAMETABLE_1 + NAMETABLE_OFFSET) >> 8);
+        PPU_ADDRESS = (uint8_t)(PPU_NAMETABLE_1 + NAMETABLE_OFFSET);
+    }
 
     // draw top
     PPU_DATA = BORDER_TL;
@@ -26,8 +34,16 @@ void DrawBackground_Top()
 
 void DrawBackground_Middle()
 {
-    PPU_ADDRESS = (uint8_t)((PPU_NAMETABLE_0 + NAMETABLE_OFFSET + NUM_COLS * drawing_line) >> 8);
-    PPU_ADDRESS = (uint8_t)(PPU_NAMETABLE_0 + NAMETABLE_OFFSET + NUM_COLS * drawing_line);
+    if (pattern_table == 0)
+    {
+        PPU_ADDRESS = (uint8_t)((PPU_NAMETABLE_0 + NAMETABLE_OFFSET + NUM_COLS * drawing_line) >> 8);
+        PPU_ADDRESS = (uint8_t)(PPU_NAMETABLE_0 + NAMETABLE_OFFSET + NUM_COLS * drawing_line);
+    }
+    else
+    {
+        PPU_ADDRESS = (uint8_t)((PPU_NAMETABLE_1 + NAMETABLE_OFFSET + NUM_COLS * drawing_line) >> 8);
+        PPU_ADDRESS = (uint8_t)(PPU_NAMETABLE_1 + NAMETABLE_OFFSET + NUM_COLS * drawing_line);
+    }
 
     PPU_DATA = BORDER_L;
 
@@ -41,8 +57,16 @@ void DrawBackground_Middle()
 
 void DrawBackground_Bottom()
 {
-    PPU_ADDRESS = (uint8_t)((PPU_NAMETABLE_0 + NAMETABLE_OFFSET + NUM_COLS * (NUM_ROWS - 1)) >> 8);
-    PPU_ADDRESS = (uint8_t)(PPU_NAMETABLE_0 + NAMETABLE_OFFSET + NUM_COLS * (NUM_ROWS - 1));
+    if (pattern_table == 0)
+    {
+        PPU_ADDRESS = (uint8_t)((PPU_NAMETABLE_0 + NAMETABLE_OFFSET + NUM_COLS * (NUM_ROWS - 1)) >> 8);
+        PPU_ADDRESS = (uint8_t)(PPU_NAMETABLE_0 + NAMETABLE_OFFSET + NUM_COLS * (NUM_ROWS - 1));
+    }
+    else
+    {
+        PPU_ADDRESS = (uint8_t)((PPU_NAMETABLE_1 + NAMETABLE_OFFSET + NUM_COLS * (NUM_ROWS - 1)) >> 8);
+        PPU_ADDRESS = (uint8_t)(PPU_NAMETABLE_1 + NAMETABLE_OFFSET + NUM_COLS * (NUM_ROWS - 1));
+    }
 
     // draw bottom
     PPU_DATA = BORDER_BL;
@@ -57,16 +81,32 @@ void DrawBackground_Bottom()
 
 void ClearText()
 {
-    PPU_ADDRESS = (uint8_t)((PPU_NAMETABLE_0 + TEXT_OFFSET) >> 8);
-    PPU_ADDRESS = (uint8_t)(PPU_NAMETABLE_0 + TEXT_OFFSET);
+    if (pattern_table == 0)
+    {
+        PPU_ADDRESS = (uint8_t)((PPU_NAMETABLE_0 + TEXT_OFFSET) >> 8);
+        PPU_ADDRESS = (uint8_t)(PPU_NAMETABLE_0 + TEXT_OFFSET);
+    }
+    else
+    {
+        PPU_ADDRESS = (uint8_t)((PPU_NAMETABLE_1 + TEXT_OFFSET) >> 8);
+        PPU_ADDRESS = (uint8_t)(PPU_NAMETABLE_1 + TEXT_OFFSET);
+    }
 
     for (i = 0; i < (length_of_TEXT); ++i)
     {
         PPU_DATA = BLANK_TILE;
     }
 
-    PPU_ADDRESS = (uint8_t)((PPU_ATTRIB_TABLE_0 + ATTR_OFFSET) >> 8);
-    PPU_ADDRESS = (uint8_t)(PPU_ATTRIB_TABLE_0 + ATTR_OFFSET);
+    if (pattern_table == 0)
+    {
+        PPU_ADDRESS = (uint8_t)((PPU_ATTRIB_TABLE_0 + ATTR_OFFSET) >> 8);
+        PPU_ADDRESS = (uint8_t)(PPU_ATTRIB_TABLE_0 + ATTR_OFFSET);
+    }
+    else
+    {
+        PPU_ADDRESS = (uint8_t)((PPU_ATTRIB_TABLE_1 + ATTR_OFFSET) >> 8);
+        PPU_ADDRESS = (uint8_t)(PPU_ATTRIB_TABLE_1 + ATTR_OFFSET);
+    }
 
     for (i = 0; i < ATTR_SIZE; ++i)
     {
