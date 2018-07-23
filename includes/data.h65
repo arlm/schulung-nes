@@ -66,7 +66,22 @@ uint8_t const ATTRIBUTES[] = {
 };
 int const length_of_ATTRIBUTES = sizeof(ATTRIBUTES) / sizeof(ATTRIBUTES[0]);
 
+#pragma bss-name(push, "ZEROPAGE")
+uint8_t i;           // loop counter
+uint8_t attr_offset; // offset into ATTRIBUTES
 
+// used by WritePPU method
+uintptr_t ppu_addr;      // destination PPU address
+uint8_t const *ppu_data; // pointer to data to copy to PPU
+uint8_t ppu_data_size;   // # of bytes to copy to PPU
+
+uint8_t title_screen;
+uint8_t drawing_line;
+#pragma bss-name(pop)
+
+#pragma bss-name(push, "OAM")
+sprite_t player;
+#pragma bss-name(pop)
 
 uint8_t pattern_table = 0; // 0 or 1
 uint8_t fade_palette[sizeof(PAL_LEVEL)];

@@ -30,5 +30,5 @@ void InitLevel()
 
     // re-enable PPU at next VBlank
     WaitVBlank();
-    EnablePPU_NameTable_0();
+    EnablePPU();
 }

@@ -41,7 +41,7 @@ void InitCredits()
     FrameCount = 0;
 
     WaitVBlank();
-    EnablePPU_NameTable_0();
+    EnablePPU();
 }
 
 void InitFade()
@@ -104,5 +104,5 @@ void FadeStep()
     WritePPU();
 
     WaitVBlank();
-    EnablePPU_NameTable_0();
+    EnablePPU();
 }

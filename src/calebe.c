@@ -10,22 +10,6 @@
 #include "data.h"
 #include "calebe.h"
 
-#pragma bss-name(push, "ZEROPAGE")
-uint8_t i;           // loop counter
-uint8_t attr_offset; // offset into ATTRIBUTES
-
-// used by WritePPU method
-uintptr_t ppu_addr;      // destination PPU address
-uint8_t const *ppu_data; // pointer to data to copy to PPU
-uint8_t ppu_data_size;   // # of bytes to copy to PPU
-
-uint8_t title_screen;
-uint8_t drawing_line;
-#pragma bss-name(pop)
-
-#pragma bss-name(push, "OAM")
-sprite_t player;
-#pragma bss-name(pop)
 // variables defined in assembly
 #include "reset.h"
 
@@ -37,7 +21,7 @@ void ResetScroll()
 }
 
 // enable NMI and rendering
-void EnablePPU_NameTable_0()
+void EnablePPU()
 {
     PPU_CTRL = PPUCTRL_NAMETABLE_0 | // use nametable 0
                PPUCTRL_INC_1_HORIZ | // PPU_DATA increments 1 horizontally
@@ -152,7 +136,7 @@ void main(void)
 
     // turn on rendering
     ResetScroll();
-    EnablePPU_NameTable_0();
+    EnablePPU();
 
     attr_offset = ATTR_SIZE;
     title_screen = 0;
