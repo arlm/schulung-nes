@@ -53,11 +53,15 @@ PROGRAM = $(NAME).nes
 # Set SOURCES to something like 'src/foo.c src/bar.s'.
 SOURCES := 
 SOURCES += src/$(NAME).c
+SOURCES += src/title.c
+SOURCES += src/level.c
+SOURCES += src/credits.c
 SOURCES += src/reset.s
 
 # Set INCLUDES to something like 'src/foo.h src/bar.h'.
 INCLUDES := 
 INCLUDES += includes/data.h65
+INCLUDES += includes/externals.h65
 
 # Path(s) to additional libraries required for linking the program
 # Use only if you don't want to place copies of the libraries in SRCDIR
@@ -85,7 +89,8 @@ vpath %h65 $(foreach h,$(INCLUDES),$(dir $h))
 
 $(INCLUDEDIR)/%.h: %.h65
 	sed -i.bak 's/bss - name/bss-name/g' $<
-	mv $<.bak $(addsuffix .h,$(basename $(addprefix $(INCLUDEDIR)/,$(notdir $<))))
+	rm $<.bak
+	cp $< $(addsuffix .h,$(basename $(addprefix $(INCLUDEDIR)/,$(notdir $<))))
 
 # CPTODO: Disabled for now because of Windows crap paths
 #-include $(DEPENDS)

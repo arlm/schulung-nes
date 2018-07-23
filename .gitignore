@@ -12,3 +12,4 @@ error.png
 *.palette.png
 Pipfile.lock
 includes/data.h
+includes/externals.h

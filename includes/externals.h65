@@ -1,0 +1,67 @@
+#ifndef FUNCTIONS_H_
+#define FUNCTIONS_H_
+
+extern void ResetScroll(void);
+extern void EnablePPU(void);
+extern void DisablePPU(void);
+extern void WritePPU(void);
+extern void DrawBackground(void);
+extern void DrawBackground_Top(void);
+extern void DrawBackground_Middle(void);
+extern void DrawBackground_Bottom(void);
+extern void ClearText(void);
+extern void InitFade(void);
+extern void UpdateFade(void);
+extern void FadeStep(void);
+extern void InitLevel(void);
+extern void HandleInput(void);
+extern void InitCredits(void);
+
+#endif // FUNCTIONS_H_
+
+#ifndef VARIABLES_H_
+#define VARIABLES_H_
+
+#include "types.h"
+
+extern const unsigned char RLE_LEVEL[234];
+extern const unsigned char PAL_LEVEL[16];
+
+extern uint8_t i;
+#pragma zpsym("i");
+
+extern uint8_t attr_offset;
+#pragma zpsym("attr_offset");
+
+extern uintptr_t ppu_addr;
+#pragma zpsym("ppu_addr");
+
+extern uint8_t const *ppu_data;
+#pragma zpsym("ppu_data");
+
+extern uint8_t ppu_data_size;
+#pragma zpsym("ppu_data_size");
+
+extern uint8_t title_screen;
+#pragma zpsym("title_screen");
+
+extern uint8_t drawing_line;
+#pragma zpsym("drawing_line");
+
+#pragma bss-name(push, "OAM")
+extern sprite_t player;
+#pragma bss-name(pop)
+
+extern uint8_t pattern_table;
+extern uint8_t fade_palette[sizeof(PAL_LEVEL)];
+extern uint8_t fade_count;
+
+extern state_t state;
+
+extern char const TEXT[];
+extern int const length_of_TEXT;
+
+extern uint8_t const PALETTES[];
+extern uint8_t const ATTRIBUTES[];
+
+#endif // VARIABLES_H_

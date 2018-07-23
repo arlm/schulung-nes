@@ -4,13 +4,11 @@
 // Sets the video standard to be used
 #define TV_NTSC 1
 
-#include "nes.h"
-
-// variables defined in assembly
-#include "reset.h"
-
 // variables defined in C
+#include "types.h"
+#include "externals.h"
 #include "data.h"
+#include "calebe.h"
 
 #pragma bss-name(push, "ZEROPAGE")
 uint8_t i;           // loop counter
@@ -28,6 +26,8 @@ uint8_t drawing_line;
 #pragma bss-name(push, "OAM")
 sprite_t player;
 #pragma bss-name(pop)
+// variables defined in assembly
+#include "reset.h"
 
 // reset scroll location to top-left of screen
 void ResetScroll()
@@ -53,20 +53,10 @@ void EnablePPU_NameTable_0()
                PPUMASK_SSHOW;     // show background tiles in leftmost 8px
 }
 
-void EnablePPU_NameTable_1()
+void DisablePPU()
 {
-    PPU_CTRL = PPUCTRL_NAMETABLE_1 | // use nametable 1
-               PPUCTRL_INC_1_HORIZ | // PPU_DATA increments 1 horizontally
-               PPUCTRL_SPATTERN_0 |  // background uses pattern table 0
-               PPUCTRL_BPATTERN_0 |  // sprites uses pattern table 0
-               PPUCTRL_SSIZE_16x16 | // sprite size of 8x8
-               PPUCTRL_NMI_OFF;      // enable NMIs
-
-    PPU_MASK = PPUMASK_COLOR |    // show colors
-               PPUMASK_L8_BSHOW | // show background tiles in leftmost 8px
-               PPUMASK_L8_SSHOW | // show sprites in leftmost 8px
-               PPUMASK_BSHOW |    // show background
-               PPUMASK_SSHOW;     // show background tiles in leftmost 8px
+    PPU_CTRL = 0x00;
+    PPU_MASK = 0x00;
 }
 
 void WritePPU()
@@ -80,69 +70,34 @@ void WritePPU()
     }
 }
 
-void DrawBackground_Top()
+void DrawBackground()
 {
-    PPU_ADDRESS = (uint8_t)((PPU_NAMETABLE_0 + NAMETABLE_OFFSET) >> 8);
-    PPU_ADDRESS = (uint8_t)(PPU_NAMETABLE_0 + NAMETABLE_OFFSET);
-
-    // draw top
-    PPU_DATA = BORDER_TL;
-
-    for (i = 0; i < (NUM_COLS - 2); ++i)
-    {
-        PPU_DATA = BORDER_T;
-    }
-
-    PPU_DATA = BORDER_TR;
+    PPU_ADDRESS = (uint8_t)(PPU_NAMETABLE_0 >> 8);
+    PPU_ADDRESS = (uint8_t)(PPU_NAMETABLE_0);
 }
 
-void DrawBackground_Middle()
+void HandleInput()
 {
-    PPU_ADDRESS = (uint8_t)((PPU_NAMETABLE_0 + NAMETABLE_OFFSET + NUM_COLS * drawing_line) >> 8);
-    PPU_ADDRESS = (uint8_t)(PPU_NAMETABLE_0 + NAMETABLE_OFFSET + NUM_COLS * drawing_line);
-
-    PPU_DATA = BORDER_L;
-
-    for (i = 0; i < (NUM_COLS - 2); ++i)
+    switch (state)
     {
-        PPU_DATA = BLANK_TILE;
-    }
-
-    PPU_DATA = BORDER_R;
-}
-
-void DrawBackground_Bottom()
-{
-    PPU_ADDRESS = (uint8_t)((PPU_NAMETABLE_0 + NAMETABLE_OFFSET + NUM_COLS * (NUM_ROWS - 1)) >> 8);
-    PPU_ADDRESS = (uint8_t)(PPU_NAMETABLE_0 + NAMETABLE_OFFSET + NUM_COLS * (NUM_ROWS - 1));
-
-    // draw bottom
-    PPU_DATA = BORDER_BL;
-
-    for (i = 0; i < (NUM_COLS - 2); ++i)
-    {
-        PPU_DATA = BORDER_B;
-    }
-
-    PPU_DATA = BORDER_BR;
-}
-
-void ClearText()
-{
-    PPU_ADDRESS = (uint8_t)((PPU_NAMETABLE_0 + TEXT_OFFSET) >> 8);
-    PPU_ADDRESS = (uint8_t)(PPU_NAMETABLE_0 + TEXT_OFFSET);
-
-    for (i = 0; i < (sizeof(TEXT)); ++i)
-    {
-        PPU_DATA = BLANK_TILE;
-    }
-
-    PPU_ADDRESS = (uint8_t)((PPU_ATTRIB_TABLE_0 + ATTR_OFFSET) >> 8);
-    PPU_ADDRESS = (uint8_t)(PPU_ATTRIB_TABLE_0 + ATTR_OFFSET);
-
-    for (i = 0; i < ATTR_SIZE; ++i)
-    {
-        PPU_DATA = BLANK_TILE;
+    case STATE_TITLE:
+        if ((InputPort1 & BUTTON_START) &&
+            !(InputPort1Prev & BUTTON_START))
+        {
+            InitLevel();
+            //FamiToneSfxPlay(SFX_START);
+        }
+        break;
+    case STATE_LEVEL:
+        if ((InputPort1 & BUTTON_START) &&
+            !(InputPort1Prev & BUTTON_START))
+        {
+            InitCredits();
+        }
+        break;
+    case STATE_CREDITS:
+    default:
+        break;
     }
 }
 
@@ -155,7 +110,7 @@ void main(void)
     // load the palette data into PPU memory $3f00-$3f1f
     ppu_addr = PPU_PALETTE;
     ppu_data = PALETTES;
-    ppu_data_size = sizeof(PALETTES);
+    ppu_data_size = length_of_PALETTES;
     WritePPU();
 
     // load the text sprites into the background (nametable 0)
@@ -173,7 +128,7 @@ void main(void)
     // $2400 at the top right, $2800 at the bottom left, and $2C00 at the bottom right.
     ppu_addr = PPU_NAMETABLE_0 + TEXT_OFFSET;
     ppu_data = (uint8_t const *)TEXT;
-    ppu_data_size = sizeof(TEXT);
+    ppu_data_size = length_of_TEXT;
     WritePPU();
 
     // load the text attributes into the background (attributetable 0)
@@ -229,7 +184,7 @@ void main(void)
                 // rotate attributes
                 attr_offset += ATTR_SIZE;
 
-                if (attr_offset == sizeof(ATTRIBUTES))
+                if (attr_offset == length_of_ATTRIBUTES)
                 {
                     attr_offset = 0;
                 }

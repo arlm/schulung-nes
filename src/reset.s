@@ -2,13 +2,14 @@
 
 .import _main
 .export __STARTUP__:absolute=1
-.export _WaitFrame
+.export _WaitFrame, _WaitVBlank
 .exportzp _FrameCount, _InputPort1, _InputPort1Prev, _InputPort2, _InputPort2Prev
 
 ; linker-generated symbols
 
 .import __STACK_START__, __STACK_SIZE__
 .import __OAM_LOAD__
+
 .include "zeropage.inc"
 
 ; definitions
@@ -159,6 +160,12 @@ _WaitFrame:
     bne @loop
 
     jsr UpdateInput
+
+    rts
+
+_WaitVBlank:
+	bit PPU_STATUS
+	bpl _WaitVBlank
 
     rts
 
