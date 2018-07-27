@@ -3,6 +3,9 @@
 
 #include <stdint.h>
 
+// Sets the video standard to be used
+#define TV_NTSC 1
+
 #include "nes.h"
 
 #define TEXT_X 10
@@ -13,7 +16,8 @@ typedef enum state
 {
     STATE_TITLE,
     STATE_LEVEL,
-    STATE_CREDITS
+    STATE_CREDITS,
+    STATE_PAUSE
 } state_t;
 
 #define ATTR_SIZE 4

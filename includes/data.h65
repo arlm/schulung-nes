@@ -25,7 +25,7 @@ uint8_t const PALETTES[] = {
 
     COLOR_DGRAY, COLOR_WHITE, COLOR_LGRAY, // sprite palette 0
     0,                                     // ignored
-    0, 0, 0,                               // sprite palette 1
+    COLOR_WHITE, COLOR_WHITE, COLOR_WHITE, // sprite palette 1
     0,                                     // ignored
     0, 0, 0,                               // sprite palette 2
     0,                                     // ignored
@@ -75,18 +75,19 @@ uintptr_t ppu_addr;      // destination PPU address
 uint8_t const *ppu_data; // pointer to data to copy to PPU
 uint8_t ppu_data_size;   // # of bytes to copy to PPU
 
-uint8_t title_screen;
 uint8_t drawing_line;
+state_t game_state;
+uint8_t const *background;
 #pragma bss-name(pop)
 
 #pragma bss-name(push, "OAM")
 sprite_t player;
+sprite_t pause_sprites[5];
 #pragma bss-name(pop)
+int const length_of_pause_sprites = sizeof(pause_sprites) / sizeof(sprite_t);
 
 uint8_t pattern_table = 0; // 0 or 1
 uint8_t fade_palette[sizeof(PAL_LEVEL)];
 uint8_t fade_count;
-
-state_t state;
 
 #endif // DATA_H_

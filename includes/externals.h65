@@ -42,21 +42,23 @@ extern uint8_t const *ppu_data;
 extern uint8_t ppu_data_size;
 #pragma zpsym("ppu_data_size");
 
-extern uint8_t title_screen;
-#pragma zpsym("title_screen");
-
 extern uint8_t drawing_line;
 #pragma zpsym("drawing_line");
 
+extern state_t game_state;
+#pragma zpsym("game_state");
+
+extern uint8_t const *background;
+#pragma zpsym("background");
+
 #pragma bss-name(push, "OAM")
 extern sprite_t player;
+extern sprite_t pause_sprites[5];
 #pragma bss-name(pop)
 
 extern uint8_t pattern_table;
 extern uint8_t fade_palette[sizeof(PAL_LEVEL)];
 extern uint8_t fade_count;
-
-extern state_t state;
 
 extern char const TEXT[];
 extern int const length_of_TEXT;

@@ -1,9 +1,6 @@
 #include <stdint.h>
 #include <stddef.h>
 
-// Sets the video standard to be used
-#define TV_NTSC 1
-
 // variables defined in C
 #include "types.h"
 #include "externals.h"
@@ -31,7 +28,7 @@ void EnablePPU()
                    PPUCTRL_INC_1_HORIZ | // PPU_DATA increments 1 horizontally
                    PPUCTRL_SPATTERN_0 |  // background uses pattern table 0
                    PPUCTRL_BPATTERN_0 |  // sprites uses pattern table 0
-                   PPUCTRL_SSIZE_16x16 | // sprite size of 8x8
+                   PPUCTRL_SSIZE_8x8 |   // sprite size of 8x8
                    PPUCTRL_NMI_ON;       // enable NMIs
     }
     else
@@ -40,7 +37,7 @@ void EnablePPU()
                    PPUCTRL_INC_1_HORIZ | // PPU_DATA increments 1 horizontally
                    PPUCTRL_SPATTERN_1 |  // background uses pattern table 1
                    PPUCTRL_BPATTERN_1 |  // sprites uses pattern table 1
-                   PPUCTRL_SSIZE_16x16 | // sprite size of 8x8
+                   PPUCTRL_SSIZE_8x8 |   // sprite size of 8x8
                    PPUCTRL_NMI_ON;       // enable NMIs
     }
 
@@ -70,6 +67,10 @@ void WritePPU()
 
 void DrawBackground()
 {
+}
+
+void DrawRLEBackground()
+{
     if (pattern_table == 0)
     {
         PPU_ADDRESS = (uint8_t)(PPU_NAMETABLE_0 >> 8);
@@ -80,31 +81,46 @@ void DrawBackground()
         PPU_ADDRESS = (uint8_t)(PPU_NAMETABLE_1 >> 8);
         PPU_ADDRESS = (uint8_t)(PPU_NAMETABLE_1);
     }
+
+    UnRLE(background);
 }
 
 void HandleInput()
 {
-    switch (state)
+    switch (game_state)
     {
     case STATE_TITLE:
-        if ((InputPort1 & BUTTON_START) &&
-            !(InputPort1Prev & BUTTON_START))
-        {
-            InitLevel();
-            //FamiToneSfxPlay(SFX_START);
-        }
         break;
     case STATE_LEVEL:
-        if ((InputPort1 & BUTTON_START) &&
-            !(InputPort1Prev & BUTTON_START))
-        {
-            InitCredits();
-        }
         break;
     case STATE_CREDITS:
     default:
         break;
     }
+}
+
+void InitializePauseSprites()
+{
+    pause_sprites[0].x = 0x70;
+    pause_sprites[0].y = 0xef;
+    pause_sprites[0].tile_index = (uint8_t)'P';
+    pause_sprites[0].attributes = 0x01;
+    pause_sprites[1].x = 0x78;
+    pause_sprites[1].y = 0xef;
+    pause_sprites[1].tile_index = (uint8_t)'A';
+    pause_sprites[1].attributes = 0x01;
+    pause_sprites[2].x = 0x80;
+    pause_sprites[2].y = 0xef;
+    pause_sprites[2].tile_index = (uint8_t)'U';
+    pause_sprites[2].attributes = 0x01;
+    pause_sprites[3].x = 0x88;
+    pause_sprites[3].y = 0xef;
+    pause_sprites[3].tile_index = (uint8_t)'S';
+    pause_sprites[3].attributes = 0x01;
+    pause_sprites[4].x = 0x90;
+    pause_sprites[4].y = 0xef;
+    pause_sprites[4].tile_index = (uint8_t)'E';
+    pause_sprites[4].attributes = 0x01;
 }
 
 /**
@@ -172,68 +188,66 @@ void main(void)
     ppu_data_size = ATTR_SIZE;
     WritePPU();
 
+    InitializePauseSprites();
+
     pattern_table = 0;
     // turn on rendering
     ResetScroll();
     EnablePPU();
 
     attr_offset = ATTR_SIZE;
-    title_screen = 0;
+    game_state = STATE_TITLE;
     drawing_line = 0;
 
     // infinite loop
     while (1)
     {
         WaitFrame();
-
-        // rotate colors every half second
-        if (title_screen == 0)
+        switch (game_state)
         {
-            if (InputPort1 & BUTTON_ANY_ACTION)
+        case STATE_PAUSE:
+        {
+            if ((InputPort1 & BUTTON_START) && !(InputPort1Prev & BUTTON_START))
             {
-                ClearText();
+                game_state = STATE_LEVEL;
 
-                title_screen = 1;
-
-                continue;
-            }
-
-            if (FrameCount == (FRAMES_PER_SEC / 2))
-            {
-                // write attributes
-                ppu_data = ATTRIBUTES + attr_offset;
-                WritePPU();
-
-                // rotate attributes
-                attr_offset += ATTR_SIZE;
-
-                if (attr_offset == length_of_ATTRIBUTES)
+                for (i = 0; i < length_of_pause_sprites; ++i)
                 {
-                    attr_offset = 0;
+                    pause_sprites[i].y = 0xef;
                 }
-
-                FrameCount = 0;
-                ResetScroll();
             }
         }
-        else
+
+        break;
+
+        case STATE_LEVEL:
         {
+            if ((InputPort1 & BUTTON_START) && !(InputPort1Prev & BUTTON_START))
+            {
+                game_state = STATE_PAUSE;
+                for (i = 0; i < sizeof(pause_sprites) / sizeof(sprite_t); ++i)
+                {
+                    pause_sprites[i].y = 0x70;
+                }
+                break;
+            }
+
             if (drawing_line == 0)
             {
                 DrawBackground_Top();
-                ++drawing_line;
+                drawing_line++;
                 continue;
             }
             else if (drawing_line < NUM_ROWS - 1)
             {
                 DrawBackground_Middle();
-                ++drawing_line;
+                drawing_line++;
                 continue;
             }
             else if (drawing_line == NUM_ROWS - 1)
             {
                 DrawBackground_Bottom();
-                ++drawing_line;
+                drawing_line++;
 
                 player.x = (MAX_X / 2) - (SPRITE_WIDTH / 2);
                 player.y = (MAX_Y / 2) - (SPRITE_HEIGHT / 2) - SPRITE_HEIGHT * 2;
@@ -275,6 +289,46 @@ void main(void)
                     ++player.x;
                 }
             }
+        }
+
+        break;
+
+        case STATE_TITLE:
+        {
+            if (InputPort1 & BUTTON_ANY_ACTION)
+            {
+                ClearText();
+
+                game_state = STATE_LEVEL;
+
+                continue;
+            }
+
+            // rotate colors every half second
+            if (FrameCount == (FRAMES_PER_SEC / 2))
+            {
+                // write attributes
+                ppu_data = ATTRIBUTES + attr_offset;
+                WritePPU();
+
+                // rotate attributes
+                attr_offset += ATTR_SIZE;
+
+                if (attr_offset == length_of_ATTRIBUTES)
+                {
+                    attr_offset = 0;
+                }
+
+                FrameCount = 0;
+                ResetScroll();
+            }
+        }
+        break;
+
+        case STATE_CREDITS:
+        {
+        }
+        break;
         }
     };
 };
